@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0D9488" />
+    <title data-i18n="app.title">Clinic Management Platform</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- ===================== LOGIN ===================== -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-box" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+            <div class="login-icon" id="loginLogo">🦷</div>
+            <h1 id="loginTitle" data-i18n="app.title">Clinic Management</h1>
+            <p data-i18n="login.subtitle">نظام إدارة العيادات</p>
+            <form id="loginForm" autocomplete="on">
+                <input type="text" id="loginUser" data-i18n-placeholder="login.username" placeholder="اسم المستخدم" required autocomplete="username" />
+                <input type="password" id="loginPass" data-i18n-placeholder="login.password" placeholder="كلمة المرور" required autocomplete="current-password" />
+                <button type="submit" class="btn-primary" data-i18n="login.submit">تسجيل الدخول</button>
+                <small id="loginHint" class="login-hint"></small>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===================== MAIN APP ===================== -->
+    <div id="mainApp" style="display:none;">
+
+        <!-- ===== TOP BAR ===== -->
+        <header class="top-bar">
+            <button class="menu-btn" id="menuBtn" aria-label="Toggle sidebar">☰</button>
+            <div class="logo-text">
+                <span id="brandLogoTop">🦷</span>
+                <span id="brandNameTop" data-i18n="app.title">Clinic Management</span>
+            </div>
+
+            <div class="search-bar" role="search">
+                <input type="text" id="globalSearch" data-i18n-placeholder="search.placeholder" placeholder="🔍 بحث بالاسم أو رقم الهاتف..." aria-label="Search" />
+                <button id="searchBtn" class="btn-primary icon-btn" aria-label="Search"><i class="fas fa-search"></i></button>
+                <button id="clearSearchBtn" class="btn-secondary icon-btn" aria-label="Clear search"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="top-actions">
+                <button type="button" id="langArBtn" class="lang-btn active" aria-label="Arabic">ع</button>
+                <button type="button" id="langEnBtn" class="lang-btn" aria-label="English">E</button>
+                <button type="button" id="themeToggleBtn" class="theme-btn" aria-label="Toggle theme">🌙</button>
+                <button type="button" id="notifBtn" class="notif-btn" aria-label="Notifications">
+                    🔔 <span class="badge" id="headerBadge">0</span>
+                </button>
+                <span id="userNameHeader" class="user-name">Admin</span>
+                <button type="button" id="logoutBtn" class="logout-btn-small" aria-label="Logout">🚪</button>
+            </div>
+        </header>
+
+        <!-- ===== SIDEBAR ===== -->
+        <nav class="sidebar" id="sidebar" aria-label="Main navigation">
+            <div class="sidebar-header">
+                <span id="brandLogoSide">🦷</span>
+                <h3 id="brandNameSide" data-i18n="app.title">Clinic Management</h3>
+            </div>
+            <div id="sidebarNavItems"></div>
+        </nav>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <main class="main-content" id="mainContent">
+
+            <!-- DASHBOARD -->
+            <section id="page-dashboard" class="page active">
+                <div class="page-title">
+                    <h2 data-i18n="nav.dashboard">📊 لوحة التحكم</h2>
+                    <span class="muted-sm">
+                        <span data-i18n="dashboard.lastUpdate">آخر تحديث</span>:
+                        <span id="lastUpdateTime">—</span>
+                    </span>
+                </div>
+                <div class="stats-grid" id="statsGrid"></div>
+                <div class="charts-simple">
+                    <div class="chart-box">
+                        <div class="chart-box-head">
+                            <h4 data-i18n="dashboard.revenueChart">📊 الإيرادات الشهرية</h4>
+                            <button class="btn-secondary btn-xs" id="refreshChartsBtn"><i class="fas fa-sync"></i></button>
+                        </div>
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                    <div class="chart-box">
+                        <div class="chart-box-head">
+                            <h4 data-i18n="dashboard.expenseChart">📉 المصروفات</h4>
+                            <button class="btn-secondary btn-xs" id="refreshChartsBtn2"><i class="fas fa-sync"></i></button>
+                        </div>
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+                <div class="activity-simple">
+                    <h4 data-i18n="dashboard.recentActivity">🔄 النشاطات الأخيرة</h4>
+                    <div id="recentActivities"></div>
+                </div>
+            </section>
+
+            <!-- DENTAL -->
+            <section id="page-dental" class="page">
+                <div class="page-title">
+                    <h2 data-i18n="nav.dental">🦷 عيادة الأسنان</h2>
+                    <button class="btn-primary" id="addPatientBtn" data-i18n="patient.add">+ إضافة مريض</button>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr>
+                            <th>#</th>
+                            <th data-i18n="table.name">الاسم</th>
+                            <th data-i18n="table.phone">الهاتف</th>
+                            <th data-i18n="table.age">العمر</th>
+                            <th data-i18n="table.procedures">الإجراءات</th>
+                            <th data-i18n="table.firstVisit">أول زيارة</th>
+                            <th data-i18n="table.lastVisit">آخر زيارة</th>
+                            <th data-i18n="table.total">الكلي</th>
+                            <th data-i18n="table.paid">المدفوع</th>
+                            <th data-i18n="table.remaining">المتبقي</th>
+                            <th data-i18n="table.actions">إجراءات</th>
+                        </tr></thead>
+                        <tbody id="patientsTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- BEAUTY -->
+            <section id="page-beauty" class="page">
+                <div class="page-title">
+                    <h2 data-i18n="nav.beauty">💆 عيادة التجميل</h2>
+                    <button class="btn-primary" id="addBeautyBtn" data-i18n="beauty.add">+ إضافة عميل</button>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr>
+                            <th>#</th><th data-i18n="table.name">الاسم</th><th data-i18n="table.phone">الهاتف</th><th data-i18n="table.service">الخدمة</th>
+                            <th data-i18n="table.progress">التقدم</th>
+                            <th data-i18n="table.lastSession">آخر جلسة</th>
+                            <th data-i18n="table.total">الكلي</th><th data-i18n="table.paid">المدفوع</th><th data-i18n="table.remaining">المتبقي</th>
+                            <th data-i18n="table.actions">إجراء</th>
+                        </tr></thead>
+                        <tbody id="beautyTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- RENTAL -->
+            <section id="page-rental" class="page">
+                <div class="page-title">
+                    <h2 data-i18n="nav.rental">🏢 تأجير العيادات</h2>
+                    <button class="btn-primary" id="addRentalBtn" data-i18n="rental.add">+ إضافة حجز</button>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr>
+                            <th>#</th>
+                            <th data-i18n="table.clinic">العيادة</th>
+                            <th data-i18n="table.tenant">المستأجر</th>
+                            <th data-i18n="table.from">من</th>
+                            <th data-i18n="table.to">إلى</th>
+                            <th data-i18n="table.hours">الساعات</th>
+                            <th data-i18n="table.materials">المواد</th>
+                            <th data-i18n="table.total">الإجمالي</th>
+                            <th data-i18n="table.paid">المدفوع</th>
+                            <th data-i18n="table.remaining">المتبقي</th>
+                            <th data-i18n="table.status">الحالة</th>
+                            <th data-i18n="table.actions">إجراء</th>
+                        </tr></thead>
+                        <tbody id="rentalTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- CALENDAR -->
+            <section id="page-calendar" class="page">
+                <div class="page-title">
+                    <h2 data-i18n="nav.calendar">📅 التقويم</h2>
+                    <div class="calendar-controls">
+                        <button class="btn-secondary btn-xs" id="prevMonthBtn">‹</button>
+                        <span id="currentMonth">—</span>
+                        <button class="btn-secondary btn-xs" id="nextMonthBtn">›</button>
+                        <button class="btn-secondary btn-xs" id="todayBtn" data-i18n="calendar.today">اليوم</button>
+                    </div>
+                </div>
+                <div class="calendar-grid" id="calendarGrid"></div>
+                <div id="calendarEvents" class="calendar-events"></div>
+            </section>
+
+            <!-- EXPENSES -->
+            <section id="page-expenses" class="page">
+                <div class="page-title">
+                    <h2 data-i18n="nav.expenses">💰 المصروفات</h2>
+                    <button class="btn-primary" id="addExpenseBtn" data-i18n="expense.add">+ إضافة مصروف</button>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>#</th><th data-i18n="table.category">التصنيف</th><th data-i18n="table.amount">المبلغ</th><th data-i18n="table.date">التاريخ</th><th data-i18n="table.description">الوصف</th><th data-i18n="table.actions">إجراء</th></tr></thead>
+                        <tbody id="expensesTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- REPORTS -->
+            <section id="page-reports" class="page">
+                <div class="page-title">
+                    <h2 data-i18n="nav.reports">📊 التقارير</h2>
+                </div>
+                <div class="report-tabs" id="reportTabs">
+                    <button class="tab-btn active" data-report="overview" data-i18n="reports.overview">📋 نظرة عامة</button>
+                    <button class="tab-btn" data-report="patients" data-i18n="reports.patients">👤 المرضى</button>
+                    <button class="tab-btn" data-report="financial" data-i18n="reports.financial">💰 مالي</button>
+                    <button class="tab-btn" data-report="rental" data-i18n="reports.rental">🏢 التأجير</button>
+                </div>
+                <div class="reports-grid" id="reportsGrid"></div>
+            </section>
+
+            <!-- BACKUP -->
+            <section id="page-backup" class="page">
+                <div class="page-title">
+                    <h2 data-i18n="nav.backup">💾 النسخ الاحتياطي</h2>
+                </div>
+                <div class="backup-simple">
+                    <div class="backup-card" id="exportCard" role="button" tabindex="0">
+                        <span>⬇️</span>
+                        <h3 data-i18n="backup.export">تصدير</h3>
+                        <p data-i18n="backup.exportDesc">تحميل البيانات كملف</p>
+                    </div>
+                    <div class="backup-card" id="importCard" role="button" tabindex="0">
+                        <span>⬆️</span>
+                        <h3 data-i18n="backup.import">استيراد</h3>
+                        <p data-i18n="backup.importDesc">استعادة من ملف</p>
+                        <input type="file" id="importFile" accept=".json" style="display:none;" />
+                    </div>
+                    <div class="backup-card" id="restoreCard" role="button" tabindex="0">
+                        <span>↩️</span>
+                        <h3 data-i18n="backup.restore">استعادة</h3>
+                        <p data-i18n="backup.restoreDesc">استعادة النسخة التلقائية</p>
+                    </div>
+                </div>
+                <p class="backup-info" id="lastBackupTime"></p>
+            </section>
+
+            <!-- SETTINGS -->
+            <section id="page-settings" class="page">
+                <div class="page-title">
+                    <h2 data-i18n="nav.settings">⚙️ الإعدادات</h2>
+                </div>
+
+                <div class="settings-tabs" id="settingsTabs">
+                    <button class="tab-btn active" data-tab="clinic" data-i18n="settings.tabs.clinic">🏥 بيانات العيادة</button>
+                    <button class="tab-btn" data-tab="branding" data-i18n="settings.tabs.branding">🎨 الهوية البصرية</button>
+                    <button class="tab-btn" data-tab="departments" data-i18n="settings.tabs.departments">🧩 الأقسام</button>
+                    <button class="tab-btn" data-tab="clinics" data-i18n="settings.tabs.clinics">🏢 العيادات</button>
+                    <button class="tab-btn" data-tab="services" data-i18n="settings.tabs.services">💰 الخدمات</button>
+                    <button class="tab-btn" data-tab="rentalPricing" data-i18n="settings.tabs.rentalPricing">🏢 أسعار الإيجار</button>
+                    <button class="tab-btn" data-tab="users" data-i18n="settings.tabs.users">👥 المستخدمون</button>
+                    <button class="tab-btn" data-tab="system" data-i18n="settings.tabs.system">🛠️ النظام</button>
+                </div>
+
+                <div class="settings-panel" id="settingsPanel"></div>
+            </section>
+
+            <!-- DYNAMIC DEPARTMENT PAGES CONTAINER -->
+            <div id="dynamicPagesContainer"></div>
+
+        </main>
+    </div>
+
+    <!-- ===================== MODALS ===================== -->
+
+    <!-- Form Modal (beauty / rental / expense) -->
+    <div class="modal" id="formModal" role="dialog" aria-modal="true">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="formTitle">—</h3>
+                <button class="close-btn" data-close-modal="formModal" aria-label="Close">✕</button>
+            </div>
+            <form id="dynamicForm">
+                <div id="formFields"></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary" data-i18n="common.save">حفظ</button>
+                    <button type="button" class="btn-secondary" data-close-modal="formModal" data-i18n="common.cancel">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Patient Form Modal (dental + dynamic departments) -->
+    <div class="modal" id="patientFormModal" role="dialog" aria-modal="true">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="patientFormTitle" data-i18n="patient.add">إضافة مريض جديد</h3>
+                <button class="close-btn" data-close-modal="patientFormModal" aria-label="Close">✕</button>
+            </div>
+            <form id="patientForm">
+                <div id="patientFormFields"></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary" data-i18n="common.save">حفظ</button>
+                    <button type="button" class="btn-secondary" data-close-modal="patientFormModal" data-i18n="common.cancel">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============ VISIT MODAL (services dropdown + separate price/payment) ============ -->
+    <div class="modal" id="visitModal" role="dialog" aria-modal="true">
+        <div class="modal-box" style="max-width:640px;">
+            <div class="modal-header">
+                <h3 data-i18n="visit.add">➕ إضافة زيارة</h3>
+                <button class="close-btn" data-close-modal="visitModal" aria-label="Close">✕</button>
+            </div>
+            <form id="visitForm">
+
+                <div class="form-group">
+                    <label data-i18n="visit.date">📅 تاريخ الزيارة</label>
+                    <input type="date" id="visitDate" required />
+                </div>
+
+                <div class="form-group services-picker">
+                    <label data-i18n="visit.service">🦷 الخدمة / الإجراء</label>
+                    <div class="services-picker-row">
+                        <select id="visitServiceSelect" class="service-select"></select>
+                        <button type="button" class="btn-primary" id="addServiceFromDropdownBtn" aria-label="Add service">
+                            + <span data-i18n="common.add">إضافة</span>
+                        </button>
+                    </div>
+                    <div id="selectedServicesChips" class="service-chips-container">
+                        <span class="muted-sm">لم تختر خدمات بعد</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="visit.customProcedure">📝 أو اكتب إجراء مخصص</label>
+                    <input type="text" id="visitProcedure" placeholder="مثال: حشو عصب" />
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label data-i18n="visit.procedurePrice">💰 سعر الإجراء</label>
+                        <input type="number" id="visitProcedurePrice" min="0" step="0.01" value="0" />
+                        <div class="hint">يُضاف إلى "المبلغ الكلي"</div>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="visit.paymentOptional">💳 دفعة (اختياري)</label>
+                        <input type="number" id="visitPayment" min="0" step="0.01" value="0" />
+                        <div class="hint">تُضاف إلى "المدفوع"</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="visit.notes">📝 ملاحظات</label>
+                    <input type="text" id="visitNotes" />
+                </div>
+
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary" data-i18n="common.save">حفظ</button>
+                    <button type="button" class="btn-secondary" data-close-modal="visitModal" data-i18n="common.cancel">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal" id="paymentModal" role="dialog" aria-modal="true">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 data-i18n="payment.add">💰 إضافة دفعة</h3>
+                <button class="close-btn" data-close-modal="paymentModal" aria-label="Close">✕</button>
+            </div>
+            <form id="paymentForm">
+                <div class="form-group"><label data-i18n="payment.date">📅 التاريخ</label><input type="date" id="paymentDate" required /></div>
+                <div class="form-group"><label data-i18n="payment.amount">💰 المبلغ</label><input type="number" id="paymentAmount" min="0" step="0.01" required /></div>
+                <div class="form-group"><label data-i18n="payment.method">💳 طريقة الدفع</label>
+                    <select id="paymentMethod">
+                        <option value="كاش" data-i18n="payment.cash">كاش</option>
+                        <option value="كارت" data-i18n="payment.card">كارت</option>
+                        <option value="تحويل" data-i18n="payment.transfer">تحويل</option>
+                        <option value="شيك" data-i18n="payment.check">شيك</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary" data-i18n="common.save">إضافة</button>
+                    <button type="button" class="btn-secondary" data-close-modal="paymentModal" data-i18n="common.cancel">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirm Modal -->
+    <div class="modal" id="deleteConfirmModal" role="dialog" aria-modal="true">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 data-i18n="delete.title">⚠️ تأكيد الحذف</h3>
+                <button class="close-btn" data-close-modal="deleteConfirmModal" aria-label="Close">✕</button>
+            </div>
+            <p id="deleteConfirmMessage"></p>
+            <div class="modal-actions">
+                <button class="btn-danger" id="deleteConfirmBtn" data-i18n="common.delete">حذف</button>
+                <button class="btn-secondary" data-close-modal="deleteConfirmModal" data-i18n="common.cancel">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Settings Modal -->
+    <div class="modal" id="loginSettingsModal" role="dialog" aria-modal="true">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 data-i18n="login.editCredentials">🔐 تعديل بيانات الدخول</h3>
+                <button class="close-btn" data-close-modal="loginSettingsModal" aria-label="Close">✕</button>
+            </div>
+            <form id="loginSettingsForm">
+                <div class="form-group"><label data-i18n="login.username">اسم المستخدم</label><input type="text" id="newUsername" required /></div>
+                <div class="form-group"><label data-i18n="login.newPassword">كلمة المرور</label><input type="password" id="newPassword" required minlength="4" /></div>
+                <div class="form-group"><label data-i18n="login.confirmPassword">تأكيد كلمة المرور</label><input type="password" id="confirmPassword" required /></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary" data-i18n="common.save">حفظ</button>
+                    <button type="button" class="btn-secondary" data-close-modal="loginSettingsModal" data-i18n="common.cancel">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notifications Modal -->
+    <div class="modal" id="notificationsModal" role="dialog" aria-modal="true">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 data-i18n="notifications.title">🔔 الإشعارات</h3>
+                <button class="close-btn" data-close-modal="notificationsModal" aria-label="Close">✕</button>
+            </div>
+            <div id="notificationsList"></div>
+        </div>
+    </div>
+
+    <!-- Search Results Modal -->
+    <div class="modal" id="searchResultsModal" role="dialog" aria-modal="true">
+        <div class="modal-box" style="max-width:700px;">
+            <div class="modal-header">
+                <h3 data-i18n="search.results">🔍 نتائج البحث</h3>
+                <button class="close-btn" data-close-modal="searchResultsModal" aria-label="Close">✕</button>
+            </div>
+            <div id="searchResultsContent"></div>
+        </div>
+    </div>
+
+    <!-- Beauty File Modal -->
+    <div class="modal full-modal" id="beautyFileModal" role="dialog" aria-modal="true">
+        <div class="modal-box full-box">
+            <div class="modal-header">
+                <h3 id="beautyFileName">📋 ملف العميل</h3>
+                <div class="modal-header-actions">
+                    <button class="btn-secondary" id="printBeautyBtn" data-i18n="common.print">🖨️ طباعة</button>
+                    <button class="btn-secondary" id="exportBeautyPdfBtn" data-i18n="common.pdf">📄 PDF</button>
+                    <button class="close-btn" data-close-modal="beautyFileModal" aria-label="Close">✕</button>
+                </div>
+            </div>
+            <div id="beautyFileContent"></div>
+        </div>
+    </div>
+
+    <!-- Patient File Full Page -->
+    <div id="patientFilePage">
+        <div class="patient-file-page">
+            <div class="patient-file-nav">
+                <button class="btn-secondary" id="backToPatientsBtn"><i class="fas fa-arrow-right"></i> <span data-i18n="common.back">العودة</span></button>
+                <h2 id="patientFileTitle">📋 ملف المريض</h2>
+                <div>
+                    <button class="btn-secondary" id="printPatientFileBtn"><i class="fas fa-print"></i> <span data-i18n="common.print">طباعة</span></button>
+                    <button class="btn-secondary" id="exportPatientPdfBtn"><i class="fas fa-file-pdf"></i> PDF</button>
+                </div>
+            </div>
+            <div id="patientFileContent"></div>
+        </div>
+    </div>
+
+    <!-- ===================== DEPARTMENT MODAL ===================== -->
+    <div class="modal" id="addDepartmentModal" role="dialog" aria-modal="true">
+        <div class="modal-box" style="max-width:640px;">
+            <div class="modal-header">
+                <h3 id="addDeptTitle">🧩 إضافة قسم جديد</h3>
+                <button class="close-btn" data-close-modal="addDepartmentModal" aria-label="Close">✕</button>
+            </div>
+            <form id="addDeptForm">
+                <input type="hidden" id="deptEditId" value="" />
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>اسم القسم بالعربية <span class="required">*</span></label>
+                        <input type="text" id="dept_nameAr" required placeholder="مثال: عيادة الجلدية" />
+                    </div>
+                    <div class="form-group">
+                        <label>اسم القسم بالإنجليزية</label>
+                        <input type="text" id="dept_nameEn" placeholder="Dermatology" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>🖼️ اختر أيقونة القسم <span class="required">*</span></label>
+                    <div class="icon-grid" id="deptIconGrid"></div>
+                    <input type="hidden" id="dept_icon" value="fa-stethoscope" />
+                    <div class="hint">📌 اضغط على الأيقونة لاختيارها.</div>
+                </div>
+
+                <div class="form-group">
+                    <label>👤 نوع الكيان في هذا القسم <span class="required">*</span></label>
+                    <div class="radio-row">
+                        <label class="radio-card">
+                            <input type="radio" name="dept_entityType" value="patient" checked />
+                            <span>
+                                <strong>مريض</strong>
+                                <small>قسم طبي — يضيف "مرضى" مع زيارات ودفعات</small>
+                            </span>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="dept_entityType" value="client" />
+                            <span>
+                                <strong>عميل</strong>
+                                <small>قسم خدمي — يضيف "عملاء" مع زيارات ودفعات</small>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>حالة القسم</label>
+                    <select id="dept_enabled">
+                        <option value="true">✅ مفعّل</option>
+                        <option value="false">⏸️ معطّل</option>
+                    </select>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary" id="saveDeptBtn">💾 حفظ القسم</button>
+                    <button type="button" class="btn-secondary" data-close-modal="addDepartmentModal">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===================== SERVICE MODAL ===================== -->
+    <div class="modal" id="serviceModal" role="dialog" aria-modal="true">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="serviceModalTitle">💰 إضافة خدمة جديدة</h3>
+                <button class="close-btn" data-close-modal="serviceModal" aria-label="Close">✕</button>
+            </div>
+            <form id="serviceForm">
+                <input type="hidden" id="svc_editId" value="" />
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>اسم الخدمة بالعربية <span class="required">*</span></label>
+                        <input type="text" id="svc_nameAr" required placeholder="مثال: تنظيف جير" />
+                    </div>
+                    <div class="form-group">
+                        <label>اسم الخدمة بالإنجليزية</label>
+                        <input type="text" id="svc_nameEn" placeholder="Teeth Cleaning" />
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>السعر <span class="required">*</span></label>
+                        <input type="number" id="svc_price" min="0" step="0.01" required value="0" />
+                    </div>
+                    <div class="form-group">
+                        <label>المدة (دقائق)</label>
+                        <input type="number" id="svc_duration" min="0" step="1" value="0" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>القسم المرتبط</label>
+                    <select id="svc_department"></select>
+                </div>
+
+                <div class="form-group">
+                    <label>الوصف</label>
+                    <input type="text" id="svc_description" placeholder="وصف مختصر للخدمة" />
+                </div>
+
+                <div class="form-group">
+                    <label>الحالة</label>
+                    <select id="svc_enabled">
+                        <option value="true">✅ مفعّلة</option>
+                        <option value="false">⏸️ معطّلة</option>
+                    </select>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary" id="saveServiceBtn">💾 حفظ الخدمة</button>
+                    <button type="button" class="btn-secondary" data-close-modal="serviceModal">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===================== USER MODAL ===================== -->
+    <div class="modal" id="userModal" role="dialog" aria-modal="true">
+        <div class="modal-box" style="max-width:760px;">
+            <div class="modal-header">
+                <h3 id="userModalTitle">👤 إضافة مستخدم جديد</h3>
+                <button class="close-btn" data-close-modal="userModal" aria-label="Close">✕</button>
+            </div>
+            <form id="userForm">
+                <input type="hidden" id="usr_editId" value="" />
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>اسم المستخدم <span class="required">*</span></label>
+                        <input type="text" id="usr_username" required placeholder="مثال: ahmed" autocomplete="off" />
+                    </div>
+                    <div class="form-group">
+                        <label>الاسم الظاهر <span class="required">*</span></label>
+                        <input type="text" id="usr_displayName" required placeholder="مثال: د. أحمد" />
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>كلمة المرور <span class="required">*</span></label>
+                        <input type="password" id="usr_password" minlength="4" autocomplete="new-password" />
+                        <div class="hint" id="usr_pwdHint">4 أحرف على الأقل</div>
+                    </div>
+                    <div class="form-group">
+                        <label>تأكيد كلمة المرور</label>
+                        <input type="password" id="usr_confirmPassword" autocomplete="new-password" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>👥 صلاحيات المستخدم</label>
+                    <div class="permissions-table-wrap">
+                        <table class="permissions-table">
+                            <thead>
+                                <tr>
+                                    <th>الصفحة</th>
+                                    <th>عرض</th>
+                                    <th>إضافة</th>
+                                    <th>تعديل</th>
+                                    <th>حذف</th>
+                                    <th>الكل</th>
+                                </tr>
+                            </thead>
+                            <tbody id="permissionsTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="hint">📌 حدد العمليات المسموح بها لكل صفحة.</div>
+                </div>
+
+                <div class="form-group">
+                    <label>حالة المستخدم</label>
+                    <select id="usr_active">
+                        <option value="true">✅ مفعّل</option>
+                        <option value="false">⏸️ معطّل</option>
+                    </select>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary" id="saveUserBtn">💾 حفظ المستخدم</button>
+                    <button type="button" class="btn-secondary" data-close-modal="userModal">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
